@@ -1,6 +1,7 @@
-﻿using System;
+using System;
 using System.Reflection;
 using System.Runtime.CompilerServices;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace Common.Utils.TimerScheduler
@@ -68,7 +69,7 @@ namespace Common.Utils.TimerScheduler
         {
             ConditionalLock(() =>
             {
-                _executionsCount = 0;
+                Interlocked.Exchange(ref _executionsCount, 0);
                 _startedTimeMSec = TimerJob.GetNowMSec() - _periodMSec;
             });
         }
@@ -80,7 +81,7 @@ namespace Common.Utils.TimerScheduler
         {
             ConditionalLock(() =>
             {
-                _executionsCount = 0;
+                Interlocked.Exchange(ref _executionsCount, 0);
                 _startedTimeMSec = TimerJob.GetNowMSec();
             });
         }
@@ -95,7 +96,7 @@ namespace Common.Utils.TimerScheduler
 
             ConditionalLock(() =>
             {
-                 nextTime = _startedTimeMSec + (_executionsCount + 1) * _periodMSec;
+                 nextTime = _startedTimeMSec + (Interlocked.Read(ref _executionsCount) + 1) * _periodMSec;
             });
 
             return nextTime - TimerJob.GetNowMSec();
@@ -111,7 +112,7 @@ namespace Common.Utils.TimerScheduler
                 // Доступ к публичным методам класса при выполнении _action() должен быть незалоченным, чтобы не было блокировки.
                 _isLocked = true;
 
-                _executionsCount++;
+                Interlocked.Increment(ref _executionsCount);
                 _action();
 
                 _isLocked = false;
