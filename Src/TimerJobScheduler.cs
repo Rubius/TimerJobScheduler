@@ -1,4 +1,4 @@
-﻿using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Logging;
 using System;
 using System.Collections.Concurrent;
 using System.Linq;
@@ -114,7 +114,7 @@ namespace Common.Utils.TimerScheduler
 
         private void ExecuteJobsInfinitely(CancellationToken cancellationToken)
         {
-            while (true)
+            while (!cancellationToken.IsCancellationRequested)
             {
                 // Получение времени ожидания до ближайшей задачи.
                 TimerJob job = GetNearestJob();
@@ -152,10 +152,10 @@ namespace Common.Utils.TimerScheduler
             if (_timerJobs.IsEmpty)
                 return null;
 
-            TimerJob nearestJob = _timerJobs.First();
-            long minTime = nearestJob.GetMSecToNextExecution();
+            TimerJob nearestJob = null;
+            long minTime = long.MaxValue;
 
-            foreach (var timerJob in _timerJobs.Skip(1))
+            foreach (var timerJob in _timerJobs)
             {
                 long time = timerJob.GetMSecToNextExecution();
                 if (time < minTime)
